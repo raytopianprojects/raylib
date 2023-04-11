@@ -263,6 +263,43 @@
     //#include <GLES2/gl2.h>                // OpenGL ES 2.0 library (not required in this module, only in rlgl)
 #endif
 
+#if defined(PLATFORM_NX)
+    #include <switch.h>
+    #include <EGL/egl.h>    // EGL library
+    #include <EGL/eglext.h> // EGL extensions
+    #include <GLES2/gl2.h>  // OpenGL ES 2.0 library
+    #if defined(NX_USB_DEBUGGER)
+        #include "nxusb.h"
+    #endif
+#endif
+
+#if defined(PLATFORM_N3DS)
+    #include <3ds.h>
+#endif
+
+#if defined(PLATFORM_WII)
+    #include <gccore.h>
+    #include <wiiuse/wpad.h>
+#endif
+
+#if defined(PLATFORM_GC)
+    #include <ogcsys.h>
+    #include <gccore.h>
+#endif
+
+#if defined(PLATFORM_GBA)
+    #include <gba_console.h>
+    #include <gba_video.h>
+    #include <gba_interrupt.h>
+    #include <gba_systemcalls.h>
+    #include <gba_input.h>
+#endif
+
+#if defined(PLATFORM_NDS)
+    #include <nds.h>
+#endif
+
+
 #if defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
     #include <fcntl.h>                  // POSIX file control definitions - open(), creat(), fcntl()
     #include <unistd.h>                 // POSIX standard function definitions - read(), close(), STDIN_FILENO
