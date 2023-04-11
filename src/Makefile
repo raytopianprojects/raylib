@@ -11,6 +11,11 @@
 #    PLATFORM_RPI:      Raspberry Pi (deprecated - RPI OS Buster only)
 #    PLATFORM_DRM:      Linux native mode, including Raspberry Pi (RPI OS Bullseye)
 #    PLATFORM_WEB:      HTML5 (Chrome, Firefox)
+#    PLATFORM_LIBCTRU:  N3DS
+#    PLATFORM_LIBNDS:   NDS
+#    PLATFORM_NX:       NX
+#    PLATFORM_NGBA:     NGBA
+#    PLATFORM_NGCWII:   NGameCube, NWii
 #
 #  Many thanks to Milan Nikolic (@gen2brain) for implementing Android platform pipeline.
 #  Many thanks to Emanuele Petriglia for his contribution on GNU/Linux pipeline.
