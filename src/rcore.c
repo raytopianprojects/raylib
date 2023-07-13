@@ -4052,7 +4052,7 @@ Vector2 GetTouchPosition(int index)
     // https://docs.microsoft.com/en-us/windows/win32/wintouch/getting-started-with-multi-touch-messages
     if (index == 0) position = GetMousePosition();
 #endif
-#if defined(PLATFORM_ANDROID) || defined(PLATFORM_WEB) || defined(PLATFORM_RPI) || defined(PLATFORM_DRM)
+#if defined(PLATFORM_ANDROID) || defined(PLATFORM_WEB) || defined(PLATFORM_RPI) || defined(PLATFORM_DRM) || defined(PLATFORM_N3DS)
     if (index < MAX_TOUCH_POINTS) position = CORE.Input.Touch.position[index];
     else TRACELOG(LOG_WARNING, "INPUT: Required touch point out of range (Max touch points: %i)", MAX_TOUCH_POINTS);
 #endif
@@ -5300,6 +5300,76 @@ void PollInputEvents(void)
     }
 #endif
 
+#if defined(PLATFORM_3DS)
+
+    hidScanInput();
+
+    CORE.Input.Gamepad.ready[0] = true;
+
+    //Process buttons
+    for (int k = 0; k < 12; k++)
+    {
+        const GamepadButton button = GetGamepadButton(k);
+
+        CORE.Input.Gamepad.previousState[0][button] = CORE.Input.Gamepad.currentState[0][button];
+
+        if (hidKeysHeld() & (1 << k))
+        {
+            CORE.Input.Gamepad.currentState[0][button] = 1;
+            CORE.Input.Gamepad.lastButtonPressed = button;
+        }
+        else
+        {
+            CORE.Input.Gamepad.currentState[0][button] = 0;
+        }
+    }
+
+    //Process axis
+    circlePosition circlePos;
+
+    hidCircleRead(&circlePos);
+    CORE.Input.Gamepad.axisState[0][GAMEPAD_AXIS_LEFT_X] = circlePos.x / 160.0f;
+    CORE.Input.Gamepad.axisState[0][GAMEPAD_AXIS_LEFT_Y] = circlePos.y / 160.0f;
+
+    irrstCstickRead(&circlePos);
+    CORE.Input.Gamepad.axisState[0][GAMEPAD_AXIS_RIGHT_X] = circlePos.x / 160.0f;
+    CORE.Input.Gamepad.axisState[0][GAMEPAD_AXIS_RIGHT_Y] = circlePos.y / 160.0f;
+
+    CORE.Input.Gamepad.axisCount = 4;
+
+    //Process touchscreen
+    touchPosition touchPos;
+
+    hidTouchRead(&touchPos);
+
+    CORE.Input.Touch.position[0].x = touchPos.x;
+    CORE.Input.Touch.position[0].y = touchPos.y;
+
+    CORE.Input.Touch.currentTouchState[0] = (hidKeysHeld() & KEY_TOUCH) ? 1 : 0;
+
+    //Process gestures
+    GestureEvent gestureEvent = { 0 };
+
+    gestureEvent.pointCount = CORE.Input.Touch.currentTouchState[0] | CORE.Input.Touch.previousTouchState[0];
+
+    if(gestureEvent.pointCount)
+    {
+        if(hidKeysDown() & KEY_TOUCH)
+            gestureEvent.touchAction = TOUCH_DOWN;
+        else if(hidKeysUp() & KEY_TOUCH)
+            gestureEvent.touchAction = TOUCH_UP;
+        else
+            gestureEvent.touchAction = TOUCH_MOVE;
+
+        gestureEvent.position[0] = CORE.Input.Touch.position[0];
+
+        gestureEvent.position[0].x /= (float)GetScreenWidth();
+        gestureEvent.position[0].y /= (float)GetScreenHeight();
+    }
+
+    ProcessGestureEvent(gestureEvent);
+#endif
+    
 #if defined(PLATFORM_ANDROID)
     // Register previous keys states
     // NOTE: Android supports up to 260 keys
@@ -7427,3 +7497,5 @@ const char *TextFormat(const char *text, ...)
     return currentBuffer;
 }
 #endif // !SUPPORT_MODULE_RTEXT
+
+
