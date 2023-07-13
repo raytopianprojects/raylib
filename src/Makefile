@@ -264,6 +264,12 @@ endif
 CC = gcc
 AR = ar
 
+ifeq ($(PLATFORM),PLATFORM_3DS)
+    # DevkitARM
+    CC = $(DEVKITARM)/bin/arm-none-eabi-gcc
+    AR = $(DEVKITARM)/bin/arm-none-eabi-ar
+endif
+
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),OSX)
         # OSX default compiler
@@ -347,6 +353,15 @@ endif
 
 ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
     CFLAGS += -g -D_DEBUG
+endif
+
+ifeq ($(PLATFORM),PLATFORM_3DS)
+    # Compiler flags for arquitecture
+    CFLAGS += -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
+    # Compilation functions attributes options
+    CFLAGS += -mword-relocations -fomit-frame-pointer -ffunction-sections
+    # Preprocessor macro definitions
+    CFLAGS += -D_3DS
 endif
 
 ifeq ($(RAYLIB_BUILD_MODE),RELEASE)
