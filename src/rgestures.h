@@ -525,7 +525,7 @@ static float rgVector2Distance(Vector2 v1, Vector2 v2)
 // Time measure returned are milliseconds
 static double rgGetCurrentTime(void)
 {
-    double time = 0;
+    double time = GetTime() / 1000;
 
 #if !defined(RGESTURES_STANDALONE)
     time = GetTime();
