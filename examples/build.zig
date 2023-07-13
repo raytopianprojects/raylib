@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+// This has been tested to work with zig master branch as of commit 87de821 or May 14 2023
 fn add_module(comptime module: []const u8, b: *std.Build, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode) !*std.Build.Step {
     if (target.getOsTag() == .emscripten) {
         @panic("Emscripten building via Zig unsupported");
@@ -26,10 +27,10 @@ fn add_module(comptime module: []const u8, b: *std.Build, target: std.zig.CrossT
         exe.addCSourceFile(path, &[_][]const u8{});
         exe.linkLibC();
         exe.addObjectFile(switch (target.getOsTag()) {
-            .windows => "../src/raylib.lib",
-            .linux => "../src/libraylib.a",
-            .macos => "../src/libraylib.a",
-            .emscripten => "../src/libraylib.a",
+            .windows => "../src/zig-out/lib/raylib.lib",
+            .linux => "../src/zig-out/lib/libraylib.a",
+            .macos => "../src/zig-out/lib/libraylib.a",
+            .emscripten => "../src/zig-out/lib/libraylib.a",
             else => @panic("Unsupported OS"),
         });
 
@@ -70,10 +71,8 @@ fn add_module(comptime module: []const u8, b: *std.Build, target: std.zig.CrossT
             },
         }
 
-        exe.setOutputDir(module);
-
-        var run = exe.run();
-        run.step.dependOn(&b.addInstallArtifact(exe).step);
+        b.installArtifact(exe);
+        var run = b.addRunArtifact(exe);
         run.cwd = module;
         b.step(name, name).dependOn(&run.step);
         all.dependOn(&exe.step);

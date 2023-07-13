@@ -3,21 +3,20 @@
 *   rmodels - Basic functions to draw 3d shapes and load and draw 3d models
 *
 *   CONFIGURATION:
+*       #define SUPPORT_MODULE_RMODELS
+*           rmodels module is included in the build
 *
-*   #define SUPPORT_MODULE_RMODELS
-*       rmodels module is included in the build
+*       #define SUPPORT_FILEFORMAT_OBJ
+*       #define SUPPORT_FILEFORMAT_MTL
+*       #define SUPPORT_FILEFORMAT_IQM
+*       #define SUPPORT_FILEFORMAT_GLTF
+*       #define SUPPORT_FILEFORMAT_VOX
+*       #define SUPPORT_FILEFORMAT_M3D
+*           Selected desired fileformats to be supported for model data loading.
 *
-*   #define SUPPORT_FILEFORMAT_OBJ
-*   #define SUPPORT_FILEFORMAT_MTL
-*   #define SUPPORT_FILEFORMAT_IQM
-*   #define SUPPORT_FILEFORMAT_GLTF
-*   #define SUPPORT_FILEFORMAT_VOX
-*   #define SUPPORT_FILEFORMAT_M3D
-*       Selected desired fileformats to be supported for model data loading.
-*
-*   #define SUPPORT_MESH_GENERATION
-*       Support procedural mesh generation functions, uses external par_shapes.h library
-*       NOTE: Some generated meshes DO NOT include generated texture coordinates
+*       #define SUPPORT_MESH_GENERATION
+*           Support procedural mesh generation functions, uses external par_shapes.h library
+*           NOTE: Some generated meshes DO NOT include generated texture coordinates
 *
 *
 *   LICENSE: zlib/libpng
@@ -1858,35 +1857,34 @@ bool ExportMesh(Mesh mesh, const char *fileName)
 
 #if defined(SUPPORT_FILEFORMAT_OBJ) || defined(SUPPORT_FILEFORMAT_MTL)
 // Process obj materials
-static void ProcessMaterialsOBJ(Material *rayMaterials, tinyobj_material_t *materials, int materialCount)
+static void ProcessMaterialsOBJ(Material *materials, tinyobj_material_t *mats, int materialCount)
 {
-    // Init model materials
+    // Init model mats
     for (int m = 0; m < materialCount; m++)
     {
         // Init material to default
         // NOTE: Uses default shader, which only supports MATERIAL_MAP_DIFFUSE
-        rayMaterials[m] = LoadMaterialDefault();
+        materials[m] = LoadMaterialDefault();
 
         // Get default texture, in case no texture is defined
         // NOTE: rlgl default texture is a 1x1 pixel UNCOMPRESSED_R8G8B8A8
-        rayMaterials[m].maps[MATERIAL_MAP_DIFFUSE].texture = (Texture2D){ rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+        materials[m].maps[MATERIAL_MAP_DIFFUSE].texture = (Texture2D){ rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
 
-        if (materials[m].diffuse_texname != NULL) rayMaterials[m].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture(materials[m].diffuse_texname);  //char *diffuse_texname; // map_Kd
+        if (mats[m].diffuse_texname != NULL) materials[m].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture(mats[m].diffuse_texname);  //char *diffuse_texname; // map_Kd
+        else materials[m].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ (unsigned char)(mats[m].diffuse[0]*255.0f), (unsigned char)(mats[m].diffuse[1]*255.0f), (unsigned char)(mats[m].diffuse[2] * 255.0f), 255 }; //float diffuse[3];
+        materials[m].maps[MATERIAL_MAP_DIFFUSE].value = 0.0f;
 
-        rayMaterials[m].maps[MATERIAL_MAP_DIFFUSE].color = (Color){ (unsigned char)(materials[m].diffuse[0]*255.0f), (unsigned char)(materials[m].diffuse[1]*255.0f), (unsigned char)(materials[m].diffuse[2] * 255.0f), 255 }; //float diffuse[3];
-        rayMaterials[m].maps[MATERIAL_MAP_DIFFUSE].value = 0.0f;
+        if (mats[m].specular_texname != NULL) materials[m].maps[MATERIAL_MAP_SPECULAR].texture = LoadTexture(mats[m].specular_texname);  //char *specular_texname; // map_Ks
+        materials[m].maps[MATERIAL_MAP_SPECULAR].color = (Color){ (unsigned char)(mats[m].specular[0]*255.0f), (unsigned char)(mats[m].specular[1]*255.0f), (unsigned char)(mats[m].specular[2] * 255.0f), 255 }; //float specular[3];
+        materials[m].maps[MATERIAL_MAP_SPECULAR].value = 0.0f;
 
-        if (materials[m].specular_texname != NULL) rayMaterials[m].maps[MATERIAL_MAP_SPECULAR].texture = LoadTexture(materials[m].specular_texname);  //char *specular_texname; // map_Ks
-        rayMaterials[m].maps[MATERIAL_MAP_SPECULAR].color = (Color){ (unsigned char)(materials[m].specular[0]*255.0f), (unsigned char)(materials[m].specular[1]*255.0f), (unsigned char)(materials[m].specular[2] * 255.0f), 255 }; //float specular[3];
-        rayMaterials[m].maps[MATERIAL_MAP_SPECULAR].value = 0.0f;
+        if (mats[m].bump_texname != NULL) materials[m].maps[MATERIAL_MAP_NORMAL].texture = LoadTexture(mats[m].bump_texname);  //char *bump_texname; // map_bump, bump
+        materials[m].maps[MATERIAL_MAP_NORMAL].color = WHITE;
+        materials[m].maps[MATERIAL_MAP_NORMAL].value = mats[m].shininess;
 
-        if (materials[m].bump_texname != NULL) rayMaterials[m].maps[MATERIAL_MAP_NORMAL].texture = LoadTexture(materials[m].bump_texname);  //char *bump_texname; // map_bump, bump
-        rayMaterials[m].maps[MATERIAL_MAP_NORMAL].color = WHITE;
-        rayMaterials[m].maps[MATERIAL_MAP_NORMAL].value = materials[m].shininess;
+        materials[m].maps[MATERIAL_MAP_EMISSION].color = (Color){ (unsigned char)(mats[m].emission[0]*255.0f), (unsigned char)(mats[m].emission[1]*255.0f), (unsigned char)(mats[m].emission[2] * 255.0f), 255 }; //float emission[3];
 
-        rayMaterials[m].maps[MATERIAL_MAP_EMISSION].color = (Color){ (unsigned char)(materials[m].emission[0]*255.0f), (unsigned char)(materials[m].emission[1]*255.0f), (unsigned char)(materials[m].emission[2] * 255.0f), 255 }; //float emission[3];
-
-        if (materials[m].displacement_texname != NULL) rayMaterials[m].maps[MATERIAL_MAP_HEIGHT].texture = LoadTexture(materials[m].displacement_texname);  //char *displacement_texname; // disp
+        if (mats[m].displacement_texname != NULL) materials[m].maps[MATERIAL_MAP_HEIGHT].texture = LoadTexture(mats[m].displacement_texname);  //char *displacement_texname; // disp
     }
 }
 #endif
@@ -2940,11 +2938,8 @@ Mesh GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
 
     Color *pixels = LoadImageColors(cubicmap);
 
-    int mapWidth = cubicmap.width;
-    int mapHeight = cubicmap.height;
-
     // NOTE: Max possible number of triangles numCubes*(12 triangles by cube)
-    int maxTriangles = cubicmap.width*cubicmap.height*12;
+    int maxTriangles = cubicmap.width * cubicmap.height * 12;
 
     int vCounter = 0;       // Used to count vertices
     int tcCounter = 0;      // Used to count texcoords
@@ -2981,9 +2976,9 @@ Mesh GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
     RectangleF topTexUV = { 0.0f, 0.5f, 0.5f, 0.5f };
     RectangleF bottomTexUV = { 0.5f, 0.5f, 0.5f, 0.5f };
 
-    for (int z = 0; z < mapHeight; ++z)
+    for (int z = 0; z < cubicmap.height; ++z)
     {
-        for (int x = 0; x < mapWidth; ++x)
+        for (int x = 0; x < cubicmap.width; ++x)
         {
             // Define the 8 vertex of the cube, we will combine them accordingly later...
             Vector3 v1 = { w*(x - 0.5f), h2, h*(z - 0.5f) };
@@ -4525,7 +4520,7 @@ static ModelAnimation *LoadModelAnimationsIQM(const char *fileName, unsigned int
         animations[a].boneCount = iqmHeader->num_poses;
         animations[a].bones = RL_MALLOC(iqmHeader->num_poses*sizeof(BoneInfo));
         animations[a].framePoses = RL_MALLOC(anim[a].num_frames*sizeof(Transform *));
-        // animations[a].framerate = anim.framerate;     // TODO: Use framerate?
+        // animations[a].framerate = anim.framerate;     // TODO: Use animation framerate data?
 
         for (unsigned int j = 0; j < iqmHeader->num_poses; j++)
         {
@@ -4825,7 +4820,7 @@ static Model LoadGLTF(const char *fileName)
         TRACELOG(LOG_DEBUG, "    > Textures count: %i", data->textures_count);
 
         // Force reading data buffers (fills buffer_view->buffer->data)
-        // NOTE: If an uri is defined to base64 data or external path, it's automatically loaded -> TODO: Verify this assumption
+        // NOTE: If an uri is defined to base64 data or external path, it's automatically loaded
         result = cgltf_load_buffers(&options, data, fileName);
         if (result != cgltf_result_success) TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load mesh/material buffers", fileName);
 
@@ -5205,7 +5200,9 @@ static Model LoadGLTF(const char *fileName)
                 model.meshes[meshIndex].animVertices = RL_CALLOC(model.meshes[meshIndex].vertexCount*3, sizeof(float));
                 memcpy(model.meshes[meshIndex].animVertices, model.meshes[meshIndex].vertices, model.meshes[meshIndex].vertexCount*3*sizeof(float));
                 model.meshes[meshIndex].animNormals = RL_CALLOC(model.meshes[meshIndex].vertexCount*3, sizeof(float));
-                memcpy(model.meshes[meshIndex].animNormals, model.meshes[meshIndex].normals, model.meshes[meshIndex].vertexCount*3*sizeof(float));
+                if (model.meshes[meshIndex].normals != NULL) {
+                    memcpy(model.meshes[meshIndex].animNormals, model.meshes[meshIndex].normals, model.meshes[meshIndex].vertexCount*3*sizeof(float));
+                }
 
                 meshIndex++;       // Move to next mesh
             }
@@ -5379,6 +5376,9 @@ static ModelAnimation *LoadModelAnimationsGLTF(const char *fileName, unsigned in
                     animDuration = (t > animDuration)? t : animDuration;
                 }
 
+                strncpy(animations[i].name, animData.name, sizeof(animations[i].name));
+                animations[i].name[sizeof(animations[i].name) - 1] = '\0';
+
                 animations[i].frameCount = (int)(animDuration*1000.0f/GLTF_ANIMDELAY);
                 animations[i].framePoses = RL_MALLOC(animations[i].frameCount*sizeof(Transform *));
 
@@ -5435,7 +5435,7 @@ static ModelAnimation *LoadModelAnimationsGLTF(const char *fileName, unsigned in
 
         cgltf_free(data);
     }
-
+    UnloadFileData(fileData);
     return animations;
 }
 #endif
@@ -5517,7 +5517,6 @@ static Model LoadVOX(const char *fileName)
         memcpy(pmesh->vertices, pvertices, size);
 
         // Copy indices
-        // TODO: Compute globals indices array
         size = voxarray.indices.used*sizeof(unsigned short);
         pmesh->indices = RL_MALLOC(size);
         memcpy(pmesh->indices, pindices, size);
@@ -5803,7 +5802,7 @@ static Model LoadM3D(const char *fileName)
                 model.bindPose[i].rotation.z = m3d->vertex[m3d->bone[i].ori].z;
                 model.bindPose[i].rotation.w = m3d->vertex[m3d->bone[i].ori].w;
 
-                // TODO: if the orientation quaternion not normalized, then that's encoding scaling
+                // TODO: If the orientation quaternion is not normalized, then that's encoding scaling
                 model.bindPose[i].rotation = QuaternionNormalize(model.bindPose[i].rotation);
                 model.bindPose[i].scale.x = model.bindPose[i].scale.y = model.bindPose[i].scale.z = 1.0f;
 

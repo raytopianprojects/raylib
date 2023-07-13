@@ -1,6 +1,7 @@
 const std = @import("std");
 
-pub fn addRaylib(b: *std.Build, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode) *std.Build.CompileStep {
+// This has been tested to work with zig master branch as of commit 87de821 or May 14 2023
+pub fn addRaylib(b: *std.Build, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode, options: Options) *std.Build.CompileStep {
     const raylib_flags = &[_][]const u8{
         "-std=gnu99",
         "-D_GNU_SOURCE",
@@ -27,6 +28,16 @@ pub fn addRaylib(b: *std.Build, target: std.zig.CrossTarget, optimize: std.built
         srcdir ++ "/utils.c",
     }, raylib_flags);
 
+    var gen_step = std.build.Step.WriteFile.create(b);
+    raylib.step.dependOn(&gen_step.step);
+
+    if (options.raygui) {
+        _ = gen_step.add(srcdir ++ "/raygui.c", "#define RAYGUI_IMPLEMENTATION\n#include \"raygui.h\"\n");
+        raylib.addCSourceFile(srcdir ++ "/raygui.c", raylib_flags);
+        raylib.addIncludePath(srcdir);
+        raylib.addIncludePath(srcdir ++ "/../../raygui/src");
+    }
+
     switch (target.getOsTag()) {
         .windows => {
             raylib.addCSourceFiles(&.{srcdir ++ "/rglfw.c"}, raylib_flags);
@@ -44,6 +55,7 @@ pub fn addRaylib(b: *std.Build, target: std.zig.CrossTarget, optimize: std.built
             raylib.linkSystemLibrary("dl");
             raylib.linkSystemLibrary("m");
             raylib.linkSystemLibrary("X11");
+            raylib.addIncludePath("/usr/include");
 
             raylib.defineCMacro("PLATFORM_DESKTOP", null);
         },
@@ -90,7 +102,7 @@ pub fn addRaylib(b: *std.Build, target: std.zig.CrossTarget, optimize: std.built
             const cache_include = std.fs.path.join(b.allocator, &.{ b.sysroot.?, "cache", "sysroot", "include" }) catch @panic("Out of memory");
             defer b.allocator.free(cache_include);
 
-            var dir = std.fs.openDirAbsolute(cache_include, std.fs.Dir.OpenDirOptions{.access_sub_paths = true, .no_follow = true}) catch @panic("No emscripten cache. Generate it!");
+            var dir = std.fs.openDirAbsolute(cache_include, std.fs.Dir.OpenDirOptions{ .access_sub_paths = true, .no_follow = true }) catch @panic("No emscripten cache. Generate it!");
             dir.close();
 
             raylib.addIncludePath(cache_include);
@@ -103,6 +115,10 @@ pub fn addRaylib(b: *std.Build, target: std.zig.CrossTarget, optimize: std.built
     return raylib;
 }
 
+const Options = struct {
+    raygui: bool = false,
+};
+
 pub fn build(b: *std.Build) void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
@@ -114,12 +130,24 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const lib = addRaylib(b, target, optimize);
-    lib.setOutputDir(srcdir);
-    lib.install();
+    const raygui = b.option(bool, "raygui", "Compile with raygui support");
+
+    const lib = addRaylib(b, target, optimize, .{
+        .raygui = raygui orelse false,
+    });
+
+    lib.installHeader("src/raylib.h", "raylib.h");
+    lib.installHeader("src/raymath.h", "raymath.h");
+    lib.installHeader("src/rlgl.h", "rlgl.h");
+
+    if (raygui orelse false) {
+        lib.installHeader("../raygui/src/raygui.h", "raygui.h");
+    }
+
+    b.installArtifact(lib);
 }
 
-const srcdir = struct{
+const srcdir = struct {
     fn getSrcDir() []const u8 {
         return std.fs.path.dirname(@src().file).?;
     }

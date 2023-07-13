@@ -2,26 +2,25 @@
 *
 *   rshapes - Basic functions to draw 2d shapes and check collisions
 *
-*   NOTES:
-*     Shapes can be draw using 3 types of primitives: LINES, TRIANGLES and QUADS.
-*     Some functions implement two drawing options: TRIANGLES and QUADS, by default TRIANGLES
-*     are used but QUADS implementation can be selected with SUPPORT_QUADS_DRAW_MODE define
+*   ADDITIONAL NOTES:
+*       Shapes can be draw using 3 types of primitives: LINES, TRIANGLES and QUADS.
+*       Some functions implement two drawing options: TRIANGLES and QUADS, by default TRIANGLES
+*       are used but QUADS implementation can be selected with SUPPORT_QUADS_DRAW_MODE define
 *
-*     Some functions define texture coordinates (rlTexCoord2f()) for the shapes and use a
-*     user-provided texture with SetShapesTexture(), the pourpouse of this implementation
-*     is allowing to reduce draw calls when combined with a texture-atlas.
+*       Some functions define texture coordinates (rlTexCoord2f()) for the shapes and use a
+*       user-provided texture with SetShapesTexture(), the pourpouse of this implementation
+*       is allowing to reduce draw calls when combined with a texture-atlas.
 *
-*     By default, raylib sets the default texture and rectangle at InitWindow()[rcore] to one
-*     white character of default font [rtext], this way, raylib text and shapes can be draw with
-*     a single draw call and it also allows users to configure it the same way with their own fonts.
+*       By default, raylib sets the default texture and rectangle at InitWindow()[rcore] to one
+*       white character of default font [rtext], this way, raylib text and shapes can be draw with
+*       a single draw call and it also allows users to configure it the same way with their own fonts.
 *
 *   CONFIGURATION:
+*       #define SUPPORT_MODULE_RSHAPES
+*           rshapes module is included in the build
 *
-*   #define SUPPORT_MODULE_RSHAPES
-*       rshapes module is included in the build
-*
-*   #define SUPPORT_QUADS_DRAW_MODE
-*       Use QUADS instead of TRIANGLES for drawing when possible. Lines-based shapes still use LINES
+*       #define SUPPORT_QUADS_DRAW_MODE
+*           Use QUADS instead of TRIANGLES for drawing when possible. Lines-based shapes still use LINES
 *
 *
 *   LICENSE: zlib/libpng
@@ -81,7 +80,7 @@
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-Texture2D texShapes = { 1, 1, 1, 1, 7 };                // Texture used on shapes drawing (usually a white pixel)
+Texture2D texShapes = { 1, 1, 1, 1, 7 };                // Texture used on shapes drawing (white pixel loaded by rlgl)
 Rectangle texShapesRec = { 0.0f, 0.0f, 1.0f, 1.0f };    // Texture source rectangle used on shapes drawing
 
 //----------------------------------------------------------------------------------
@@ -98,8 +97,19 @@ static float EaseCubicInOut(float t, float b, float c, float d);    // Cubic eas
 // defining a font char white rectangle would allow drawing everything in a single draw call
 void SetShapesTexture(Texture2D texture, Rectangle source)
 {
-    texShapes = texture;
-    texShapesRec = source;
+    // Reset texture to default pixel if required
+    // WARNING: Shapes texture should be probably better validated,
+    // it can break the rendering of all shapes if missused
+    if ((texture.id == 0) || (source.width == 0) || (source.height == 0))
+    {
+        texShapes = (Texture2D){ 1, 1, 1, 1, 7 };
+        texShapesRec = (Rectangle){ 0.0f, 0.0f, 1.0f, 1.0f };
+    }
+    else
+    {
+        texShapes = texture;
+        texShapesRec = source;
+    }
 }
 
 // Draw a pixel
@@ -1601,7 +1611,7 @@ bool CheckCollisionPointRec(Vector2 point, Rectangle rec)
 {
     bool collision = false;
 
-    if ((point.x >= rec.x) && (point.x <= (rec.x + rec.width)) && (point.y >= rec.y) && (point.y <= (rec.y + rec.height))) collision = true;
+    if ((point.x >= rec.x) && (point.x < (rec.x + rec.width)) && (point.y >= rec.y) && (point.y < (rec.y + rec.height))) collision = true;
 
     return collision;
 }
@@ -1759,68 +1769,26 @@ bool CheckCollisionPointLine(Vector2 point, Vector2 p1, Vector2 p2, int threshol
 // Get collision rectangle for two rectangles collision
 Rectangle GetCollisionRec(Rectangle rec1, Rectangle rec2)
 {
-    Rectangle rec = { 0, 0, 0, 0 };
+    Rectangle overlap = { 0 };
 
-    if (CheckCollisionRecs(rec1, rec2))
+    float left = (rec1.x > rec2.x)? rec1.x : rec2.x;
+    float right1 = rec1.x + rec1.width;
+    float right2 = rec2.x + rec2.width;
+    float right = (right1 < right2)? right1 : right2;
+    float top = (rec1.y > rec2.y)? rec1.y : rec2.y;
+    float bottom1 = rec1.y + rec1.height;
+    float bottom2 = rec2.y + rec2.height;
+    float bottom = (bottom1 < bottom2)? bottom1 : bottom2;
+
+    if ((left < right) && (top < bottom))
     {
-        float dxx = fabsf(rec1.x - rec2.x);
-        float dyy = fabsf(rec1.y - rec2.y);
-
-        if (rec1.x <= rec2.x)
-        {
-            if (rec1.y <= rec2.y)
-            {
-                rec.x = rec2.x;
-                rec.y = rec2.y;
-                rec.width = rec1.width - dxx;
-                rec.height = rec1.height - dyy;
-            }
-            else
-            {
-                rec.x = rec2.x;
-                rec.y = rec1.y;
-                rec.width = rec1.width - dxx;
-                rec.height = rec2.height - dyy;
-            }
-        }
-        else
-        {
-            if (rec1.y <= rec2.y)
-            {
-                rec.x = rec1.x;
-                rec.y = rec2.y;
-                rec.width = rec2.width - dxx;
-                rec.height = rec1.height - dyy;
-            }
-            else
-            {
-                rec.x = rec1.x;
-                rec.y = rec1.y;
-                rec.width = rec2.width - dxx;
-                rec.height = rec2.height - dyy;
-            }
-        }
-
-        if (rec1.width > rec2.width)
-        {
-            if (rec.width >= rec2.width) rec.width = rec2.width;
-        }
-        else
-        {
-            if (rec.width >= rec1.width) rec.width = rec1.width;
-        }
-
-        if (rec1.height > rec2.height)
-        {
-            if (rec.height >= rec2.height) rec.height = rec2.height;
-        }
-        else
-        {
-           if (rec.height >= rec1.height) rec.height = rec1.height;
-        }
+        overlap.x = left;
+        overlap.y = top;
+        overlap.width = right - left;
+        overlap.height = bottom - top;
     }
 
-    return rec;
+    return overlap;
 }
 
 //----------------------------------------------------------------------------------

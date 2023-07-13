@@ -13,75 +13,75 @@
 *       - PLATFORM_WEB:     HTML5 with WebAssembly
 *
 *   CONFIGURATION:
+*       #define PLATFORM_DESKTOP
+*           Windowing and input system configured for desktop platforms:
+*               Windows, Linux, OSX, FreeBSD, OpenBSD, NetBSD, DragonFly
 *
-*   #define PLATFORM_DESKTOP
-*       Windowing and input system configured for desktop platforms: Windows, Linux, OSX, FreeBSD, OpenBSD, NetBSD, DragonFly
-*       NOTE: Oculus Rift CV1 requires PLATFORM_DESKTOP for mirror rendering - View [rlgl] module to enable it
+*       #define PLATFORM_ANDROID
+*           Windowing and input system configured for Android device, app activity managed internally in this module.
+*           NOTE: OpenGL ES 2.0 is required and graphic device is managed by EGL
 *
-*   #define PLATFORM_ANDROID
-*       Windowing and input system configured for Android device, app activity managed internally in this module.
-*       NOTE: OpenGL ES 2.0 is required and graphic device is managed by EGL
+*       #define PLATFORM_RPI (deprecated - RPI OS Buster only)
+*           Windowing and input system configured for Raspberry Pi in native mode (no XWindow required),
+*           graphic device is managed by EGL and inputs are processed is raw mode, reading from /dev/input/
+*           WARNING: This platform is deprecated, since RPI OS Bullseye, the old Dispmanx libraries are not
+*           supported and you must be using PLATFORM_DRM
 *
-*   #define PLATFORM_RPI (deprecated - RPI OS Buster only)
-*       Windowing and input system configured for Raspberry Pi in native mode (no XWindow required),
-*       graphic device is managed by EGL and inputs are processed is raw mode, reading from /dev/input/
-*       WARNING: This platform is deprecated, since RPI OS Bullseye, the old Dispmanx libraries are not
-*       supported and you must be using PLATFORM_DRM
+*       #define PLATFORM_DRM
+*           Windowing and input system configured for DRM native mode (RPI4 and other devices)
+*           graphic device is managed by EGL and inputs are processed is raw mode, reading from /dev/input/
 *
-*   #define PLATFORM_DRM
-*       Windowing and input system configured for DRM native mode (RPI4 and other devices)
-*       graphic device is managed by EGL and inputs are processed is raw mode, reading from /dev/input/
+*       #define PLATFORM_WEB
+*           Windowing and input system configured for HTML5 (run on browser), code converted from C to asm.js
+*           using emscripten compiler. OpenGL ES 2.0 required for direct translation to WebGL equivalent code.
 *
-*   #define PLATFORM_WEB
-*       Windowing and input system configured for HTML5 (run on browser), code converted from C to asm.js
-*       using emscripten compiler. OpenGL ES 2.0 required for direct translation to WebGL equivalent code.
+*       #define SUPPORT_DEFAULT_FONT (default)
+*           Default font is loaded on window initialization to be available for the user to render simple text.
+*           NOTE: If enabled, uses external module functions to load default raylib font (module: text)
 *
-*   #define SUPPORT_DEFAULT_FONT (default)
-*       Default font is loaded on window initialization to be available for the user to render simple text.
-*       NOTE: If enabled, uses external module functions to load default raylib font (module: text)
+*       #define SUPPORT_CAMERA_SYSTEM
+*           Camera module is included (rcamera.h) and multiple predefined cameras are available:
+*               free, 1st/3rd person, orbital, custom
 *
-*   #define SUPPORT_CAMERA_SYSTEM
-*       Camera module is included (rcamera.h) and multiple predefined cameras are available: free, 1st/3rd person, orbital
+*       #define SUPPORT_GESTURES_SYSTEM
+*           Gestures module is included (rgestures.h) to support gestures detection: tap, hold, swipe, drag
 *
-*   #define SUPPORT_GESTURES_SYSTEM
-*       Gestures module is included (rgestures.h) to support gestures detection: tap, hold, swipe, drag
+*       #define SUPPORT_MOUSE_GESTURES
+*           Mouse gestures are directly mapped like touches and processed by gestures system.
 *
-*   #define SUPPORT_MOUSE_GESTURES
-*       Mouse gestures are directly mapped like touches and processed by gestures system.
+*       #define SUPPORT_TOUCH_AS_MOUSE
+*           Touch input and mouse input are shared. Mouse functions also return touch information.
 *
-*   #define SUPPORT_TOUCH_AS_MOUSE
-*       Touch input and mouse input are shared. Mouse functions also return touch information.
+*       #define SUPPORT_SSH_KEYBOARD_RPI (Raspberry Pi only)
+*           Reconfigure standard input to receive key inputs, works with SSH connection.
+*           WARNING: Reconfiguring standard input could lead to undesired effects, like breaking other
+*           running processes orblocking the device if not restored properly. Use with care.
 *
-*   #define SUPPORT_SSH_KEYBOARD_RPI (Raspberry Pi only)
-*       Reconfigure standard input to receive key inputs, works with SSH connection.
-*       WARNING: Reconfiguring standard input could lead to undesired effects, like breaking other running processes or
-*       blocking the device if not restored properly. Use with care.
+*       #define SUPPORT_BUSY_WAIT_LOOP
+*           Use busy wait loop for timing sync, if not defined, a high-resolution timer is setup and used
 *
-*   #define SUPPORT_BUSY_WAIT_LOOP
-*       Use busy wait loop for timing sync, if not defined, a high-resolution timer is setup and used
+*       #define SUPPORT_PARTIALBUSY_WAIT_LOOP
+*           Use a partial-busy wait loop, in this case frame sleeps for most of the time and runs a busy-wait-loop at the end
 *
-*   #define SUPPORT_PARTIALBUSY_WAIT_LOOP
-*       Use a partial-busy wait loop, in this case frame sleeps for most of the time and runs a busy-wait-loop at the end
+*       #define SUPPORT_EVENTS_WAITING
+*           Wait for events passively (sleeping while no events) instead of polling them actively every frame
 *
-*   #define SUPPORT_EVENTS_WAITING
-*       Wait for events passively (sleeping while no events) instead of polling them actively every frame
+*       #define SUPPORT_SCREEN_CAPTURE
+*           Allow automatic screen capture of current screen pressing F12, defined in KeyCallback()
 *
-*   #define SUPPORT_SCREEN_CAPTURE
-*       Allow automatic screen capture of current screen pressing F12, defined in KeyCallback()
+*       #define SUPPORT_GIF_RECORDING
+*           Allow automatic gif recording of current screen pressing CTRL+F12, defined in KeyCallback()
 *
-*   #define SUPPORT_GIF_RECORDING
-*       Allow automatic gif recording of current screen pressing CTRL+F12, defined in KeyCallback()
+*       #define SUPPORT_COMPRESSION_API
+*           Support CompressData() and DecompressData() functions, those functions use zlib implementation
+*           provided by stb_image and stb_image_write libraries, so, those libraries must be enabled on textures module
+*           for linkage
 *
-*   #define SUPPORT_COMPRESSION_API
-*       Support CompressData() and DecompressData() functions, those functions use zlib implementation
-*       provided by stb_image and stb_image_write libraries, so, those libraries must be enabled on textures module
-*       for linkage
-*
-*   #define SUPPORT_EVENTS_AUTOMATION
-*       Support automatic generated events, loading and recording of those events when required
+*       #define SUPPORT_EVENTS_AUTOMATION
+*           Support automatic generated events, loading and recording of those events when required
 *
 *   DEPENDENCIES:
-*       rglfw    - Manage graphic device, OpenGL context and inputs on PLATFORM_DESKTOP (Windows, Linux, OSX. FreeBSD, OpenBSD, NetBSD, DragonFly)
+*       rglfw    - Manage graphic device, OpenGL context and inputs on PLATFORM_DESKTOP (Windows, Linux, OSX, FreeBSD...)
 *       raymath  - 3D math functionality (Vector2, Vector3, Matrix, Quaternion)
 *       camera   - Multiple 3D camera modes (free, orbital, 1st person, 3rd person)
 *       gestures - Gestures system for touch-ready devices (or simulated from mouse inputs)
@@ -124,12 +124,12 @@
 #include "raymath.h"                // Vector3, Quaternion and Matrix functionality
 
 #if defined(SUPPORT_GESTURES_SYSTEM)
-    #define GESTURES_IMPLEMENTATION
+    #define RGESTURES_IMPLEMENTATION
     #include "rgestures.h"           // Gestures detection functionality
 #endif
 
 #if defined(SUPPORT_CAMERA_SYSTEM)
-    #define CAMERA_IMPLEMENTATION
+    #define RCAMERA_IMPLEMENTATION
     #include "rcamera.h"             // Camera system functionality
 #endif
 
@@ -328,6 +328,7 @@
 
 #if defined(PLATFORM_WEB)
     #define GLFW_INCLUDE_ES2            // GLFW3: Enable OpenGL ES 2.0 (translated to WebGL)
+    //#define GLFW_INCLUDE_ES3            // GLFW3: Enable OpenGL ES 3.0 (transalted to WebGL2?)
     #include "GLFW/glfw3.h"             // GLFW3: Windows, OpenGL context and Input management
     #include <sys/time.h>               // Required for: timespec, nanosleep(), select() - POSIX
 
@@ -753,8 +754,30 @@ void android_main(struct android_app *app)
     char arg0[] = "raylib";     // NOTE: argv[] are mutable
     CORE.Android.app = app;
 
-    // NOTE: Return codes != 0 are skipped
-    (void)main(1, (char *[]) { arg0, NULL });
+    // NOTE: We get the main return for exit()
+    int ret = main(1, (char *[]) { arg0, NULL });
+
+    // Request to end the native activity
+    ANativeActivity_finish(app->activity);
+
+    // Android ALooper_pollAll() variables
+    int pollResult = 0;
+    int pollEvents = 0;
+
+    // Waiting for application events before complete finishing
+    while (!CORE.Android.app->destroyRequested)
+    {
+        while ((pollResult = ALooper_pollAll(0, NULL, &pollEvents, (void **)&CORE.Android.source)) >= 0)
+        {
+            if (CORE.Android.source != NULL) CORE.Android.source->process(CORE.Android.app, CORE.Android.source);
+        }
+    }
+
+    // WARNING: Make sure you free resources properly and no other process is running from Java code or other.
+    // NOTE: You can use JNI to call a NativeLoader method (which will call finish() from the UI thread)
+    // to handle the full close from Java, without using exit(0) like here.
+
+    exit(ret);    // Close the application directly, without going through Java
 }
 
 // NOTE: Add this to header (if apps really need it)
@@ -932,7 +955,7 @@ void InitWindow(int width, int height, const char *title)
 #endif
 
 #if defined(PLATFORM_WEB)
-    // Setup callback funtions for the DOM events
+    // Setup callback functions for the DOM events
     emscripten_set_fullscreenchange_callback("#canvas", NULL, 1, EmscriptenFullscreenChangeCallback);
 
     // WARNING: Below resize code was breaking fullscreen mode for sample games and examples, it needs review
@@ -1509,13 +1532,6 @@ void ClearWindowState(unsigned int flags)
         CORE.Window.flags &= ~FLAG_WINDOW_RESIZABLE;
     }
 
-    // State change: FLAG_WINDOW_UNDECORATED
-    if (((CORE.Window.flags & FLAG_WINDOW_UNDECORATED) > 0) && ((flags & FLAG_WINDOW_UNDECORATED) > 0))
-    {
-        glfwSetWindowAttrib(CORE.Window.handle, GLFW_DECORATED, GLFW_TRUE);
-        CORE.Window.flags &= ~FLAG_WINDOW_UNDECORATED;
-    }
-
     // State change: FLAG_WINDOW_HIDDEN
     if (((CORE.Window.flags & FLAG_WINDOW_HIDDEN) > 0) && ((flags & FLAG_WINDOW_HIDDEN) > 0))
     {
@@ -1533,6 +1549,13 @@ void ClearWindowState(unsigned int flags)
     if (((CORE.Window.flags & FLAG_WINDOW_MAXIMIZED) > 0) && ((flags & FLAG_WINDOW_MAXIMIZED) > 0))
     {
         RestoreWindow();       // NOTE: Window state flag updated inside function
+    }
+
+    // State change: FLAG_WINDOW_UNDECORATED
+    if (((CORE.Window.flags & FLAG_WINDOW_UNDECORATED) > 0) && ((flags & FLAG_WINDOW_UNDECORATED) > 0))
+    {
+        glfwSetWindowAttrib(CORE.Window.handle, GLFW_DECORATED, GLFW_TRUE);
+        CORE.Window.flags &= ~FLAG_WINDOW_UNDECORATED;
     }
 
     // State change: FLAG_WINDOW_UNFOCUSED
@@ -1719,6 +1742,14 @@ void SetWindowOpacity(float opacity)
 #endif
 }
 
+// Set window focused
+void SetWindowFocused(void)
+{
+#if defined(PLATFORM_DESKTOP)
+    glfwFocusWindow(CORE.Window.handle);
+#endif
+}
+
 // Get current screen width
 int GetScreenWidth(void)
 {
@@ -1822,7 +1853,10 @@ int GetCurrentMonitor(void)
                 monitor = monitors[i];
                 glfwGetMonitorWorkarea(monitor, &mx, &my, &width, &height);
 
-                if (x >= mx && x <= (mx + width) && y >= my && y <= (my + height))
+                if ((x >= mx) &&
+                    (x < (mx + width)) &&
+                    (y >= my) &&
+                    (y < (my + height)))
                 {
                     index = i;
                     break;
@@ -2466,7 +2500,7 @@ VrStereoConfig LoadVrStereoConfig(VrDeviceInfo device)
 {
     VrStereoConfig config = { 0 };
 
-    if ((rlGetVersion() == RL_OPENGL_33) || (rlGetVersion() == RL_OPENGL_ES_20))
+    if ((rlGetVersion() == RL_OPENGL_33) || (rlGetVersion() >= RL_OPENGL_ES_20))
     {
         // Compute aspect ratio
         float aspect = ((float)device.hResolution*0.5f)/(float)device.vResolution;
@@ -3037,7 +3071,7 @@ bool IsFileExtension(const char *fileName, const char *ext)
         const char **checkExts = TextSplit(ext, ';', &extCount);  // WARNING: Module required: rtext
 
         char fileExtLower[MAX_FILE_EXTENSION_SIZE + 1] = { 0 };
-        strncpy(fileExtLower, TextToLower(fileExt),MAX_FILE_EXTENSION_SIZE);  // WARNING: Module required: rtext
+        strncpy(fileExtLower, TextToLower(fileExt), MAX_FILE_EXTENSION_SIZE);  // WARNING: Module required: rtext
 
         for (int i = 0; i < extCount; i++)
         {
@@ -3230,7 +3264,7 @@ const char *GetApplicationDirectory(void)
 
 #if defined(_WIN32)
     int len = 0;
-#if defined (UNICODE)
+#if defined(UNICODE)
     unsigned short widePath[MAX_PATH];
     len = GetModuleFileNameW(NULL, widePath, MAX_PATH);
     len = WideCharToMultiByte(0, 0, widePath, len, appDir, MAX_PATH, NULL, NULL);
@@ -3445,7 +3479,7 @@ unsigned char *CompressData(const unsigned char *data, int dataSize, int *compDa
     struct sdefl sdefl = { 0 };
     int bounds = sdefl_bound(dataSize);
     compData = (unsigned char *)RL_CALLOC(bounds, 1);
-    *compDataSize = sdeflate(&sdefl, compData, data, dataSize, COMPRESSION_QUALITY_DEFLATE);   // Compression level 8, same as stbwi
+    *compDataSize = sdeflate(&sdefl, compData, data, dataSize, COMPRESSION_QUALITY_DEFLATE);   // Compression level 8, same as stbiw
 
     TRACELOG(LOG_INFO, "SYSTEM: Compress data: Original size: %i -> Comp. size: %i", dataSize, *compDataSize);
 #endif
@@ -4189,6 +4223,17 @@ static bool InitGraphicsDevice(int width, int height)
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
 #endif
     }
+    else if (rlGetVersion() == RL_OPENGL_ES_30)                 // Request OpenGL ES 3.0 context
+    {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#if defined(PLATFORM_DESKTOP)
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+#else
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+#endif
+    }
 
 #if defined(PLATFORM_DESKTOP)
     // NOTE: GLFW 3.4+ defers initialization of the Joystick subsystem on the first call to any Joystick related functions.
@@ -4558,7 +4603,7 @@ static bool InitGraphicsDevice(int width, int height)
 
     const EGLint framebufferAttribs[] =
     {
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,     // Type of context support -> Required on RPI?
+        EGL_RENDERABLE_TYPE, (rlGetVersion() == RL_OPENGL_ES_30)? EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT,      // Type of context support
 #if defined(PLATFORM_DRM)
         EGL_SURFACE_TYPE, EGL_WINDOW_BIT,          // Don't use it on Android!
 #endif
@@ -5116,7 +5161,6 @@ void PollInputEvents(void)
 
             // Get current gamepad state
             // NOTE: There is no callback available, so we get it manually
-            // Get remapped buttons
             GLFWgamepadstate state = { 0 };
             glfwGetGamepadState(i, &state); // This remapps all gamepads so they have their buttons mapped like an xbox controller
 
@@ -5124,7 +5168,7 @@ void PollInputEvents(void)
 
             for (int k = 0; (buttons != NULL) && (k < GLFW_GAMEPAD_BUTTON_DPAD_LEFT + 1) && (k < MAX_GAMEPAD_BUTTONS); k++)
             {
-                GamepadButton button = -1;
+                int button = -1;        // GamepadButton enum values assigned
 
                 switch (k)
                 {
@@ -5765,8 +5809,9 @@ static void AndroidCommandCallback(struct android_app *app, int32_t cmd)
         case APP_CMD_STOP: break;
         case APP_CMD_DESTROY:
         {
-            // TODO: Finish activity?
-            //ANativeActivity_finish(CORE.Android.app->activity);
+            // NOTE 1: Call ANativeActivity_finish again to free resources unconditionally.
+            // NOTE 2: You can deallocate other things that are NativeActivity related here.
+            ANativeActivity_finish(CORE.Android.app->activity);
         } break;
         case APP_CMD_CONFIG_CHANGED:
         {
@@ -5981,11 +6026,12 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
     if (flags == AMOTION_EVENT_ACTION_POINTER_UP || flags == AMOTION_EVENT_ACTION_UP)
     {
         // One of the touchpoints is released, remove it from touch point arrays
-        for (int i = pointerIndex; (i < CORE.Input.Touch.pointCount-1) && (i < MAX_TOUCH_POINTS); i++)
+        for (int i = pointerIndex; (i < CORE.Input.Touch.pointCount - 1) && (i < MAX_TOUCH_POINTS); i++)
         {
             CORE.Input.Touch.pointId[i] = CORE.Input.Touch.pointId[i+1];
             CORE.Input.Touch.position[i] = CORE.Input.Touch.position[i+1];
         }
+
         CORE.Input.Touch.pointCount--;
     }
 
@@ -6122,10 +6168,17 @@ static EM_BOOL EmscriptenTouchCallback(int eventType, const EmscriptenTouchEvent
     {
         gestureEvent.pointId[i] = CORE.Input.Touch.pointId[i];
         gestureEvent.position[i] = CORE.Input.Touch.position[i];
+
+        // Normalize gestureEvent.position[i]
+        gestureEvent.position[i].x /= (float)GetScreenWidth();
+        gestureEvent.position[i].y /= (float)GetScreenHeight();
     }
 
     // Gesture data is sent to gestures system for processing
     ProcessGestureEvent(gestureEvent);
+
+    // Reset the pointCount for web, if it was the last Touch End event
+    if (eventType == EMSCRIPTEN_EVENT_TOUCHEND && CORE.Input.Touch.pointCount == 1) CORE.Input.Touch.pointCount = 0;
 #endif
 
     return 1;   // The event was consumed by the callback handler
@@ -6758,18 +6811,20 @@ static void *EventThread(void *arg)
                 if (CORE.Input.Mouse.currentPosition.y > CORE.Window.screen.height/CORE.Input.Mouse.scale.y) CORE.Input.Mouse.currentPosition.y = CORE.Window.screen.height/CORE.Input.Mouse.scale.y;
             }
 
+            // Update touch point count
+            CORE.Input.Touch.pointCount = 0;
+            if (CORE.Input.Touch.position[0].x >= 0) CORE.Input.Touch.pointCount++;
+            if (CORE.Input.Touch.position[1].x >= 0) CORE.Input.Touch.pointCount++;
+            if (CORE.Input.Touch.position[2].x >= 0) CORE.Input.Touch.pointCount++;
+            if (CORE.Input.Touch.position[3].x >= 0) CORE.Input.Touch.pointCount++;
+
 #if defined(SUPPORT_GESTURES_SYSTEM)        // PLATFORM_RPI, PLATFORM_DRM
             if (gestureUpdate)
             {
                 GestureEvent gestureEvent = { 0 };
 
-                gestureEvent.pointCount = 0;
                 gestureEvent.touchAction = touchAction;
-
-                if (CORE.Input.Touch.position[0].x >= 0) gestureEvent.pointCount++;
-                if (CORE.Input.Touch.position[1].x >= 0) gestureEvent.pointCount++;
-                if (CORE.Input.Touch.position[2].x >= 0) gestureEvent.pointCount++;
-                if (CORE.Input.Touch.position[3].x >= 0) gestureEvent.pointCount++;
+                gestureEvent.pointCount = CORE.Input.Touch.pointCount;
 
                 gestureEvent.pointId[0] = 0;
                 gestureEvent.pointId[1] = 1;
@@ -6986,7 +7041,7 @@ static void LoadAutomationEvents(const char *fileName)
     /*
     FILE *repFile = fopen(fileName, "rb");
     unsigned char fileId[4] = { 0 };
-    
+
     fread(fileId, 1, 4, repFile);
 
     if ((fileId[0] == 'r') && (fileId[1] == 'E') && (fileId[2] == 'P') && (fileId[1] == ' '))

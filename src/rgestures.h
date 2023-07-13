@@ -2,18 +2,15 @@
 *
 *   rgestures - Gestures system, gestures processing based on input events (touch/mouse)
 *
-*   NOTE: Memory footprint of this library is aproximately 128 bytes (global variables)
-*
 *   CONFIGURATION:
+*       #define RGESTURES_IMPLEMENTATION
+*           Generates the implementation of the library into the included file.
+*           If not defined, the library is in header only mode and can be included in other headers
+*           or source files without problems. But only ONE file should hold the implementation.
 *
-*   #define GESTURES_IMPLEMENTATION
-*       Generates the implementation of the library into the included file.
-*       If not defined, the library is in header only mode and can be included in other headers
-*       or source files without problems. But only ONE file should hold the implementation.
-*
-*   #define GESTURES_STANDALONE
-*       If defined, the library can be used as standalone to process gesture events with
-*       no external dependencies.
+*       #define RGESTURES_STANDALONE
+*           If defined, the library can be used as standalone to process gesture events with
+*           no external dependencies.
 *
 *   CONTRIBUTORS:
 *       Marc Palau:         Initial implementation (2014)
@@ -59,7 +56,7 @@
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
-// NOTE: Below types are required for GESTURES_STANDALONE usage
+// NOTE: Below types are required for standalone usage
 //----------------------------------------------------------------------------------
 // Boolean type
 #if (defined(__STDC__) && __STDC_VERSION__ >= 199901L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
@@ -76,7 +73,7 @@ typedef struct Vector2 {
 } Vector2;
 #endif
 
-#if defined(GESTURES_STANDALONE)
+#if defined(RGESTURES_STANDALONE)
 // Gestures type
 // NOTE: It could be used as flags to enable only some gestures
 typedef enum {
@@ -125,7 +122,7 @@ extern "C" {            // Prevents name mangling of functions
 void ProcessGestureEvent(GestureEvent event);           // Process gesture event and translate it into gestures
 void UpdateGestures(void);                              // Update gestures detected (must be called every frame)
 
-#if defined(GESTURES_STANDALONE)
+#if defined(RGESTURES_STANDALONE)
 void SetGesturesEnabled(unsigned int flags);            // Enable a set of gestures using flags
 bool IsGestureDetected(int gesture);                    // Check if a gesture have been detected
 int GetGestureDetected(void);                           // Get latest detected gesture
@@ -141,17 +138,17 @@ float GetGesturePinchAngle(void);                       // Get gesture pinch ang
 }
 #endif
 
-#endif // GESTURES_H
+#endif // RGESTURES_H
 
 /***********************************************************************************
 *
-*   GESTURES IMPLEMENTATION
+*   RGESTURES IMPLEMENTATION
 *
 ************************************************************************************/
 
-#if defined(GESTURES_IMPLEMENTATION)
+#if defined(RGESTURES_IMPLEMENTATION)
 
-#if defined(GESTURES_STANDALONE)
+#if defined(RGESTURES_STANDALONE)
 #if defined(_WIN32)
     #if defined(__cplusplus)
     extern "C" {        // Prevents name mangling of functions
@@ -206,6 +203,8 @@ typedef struct {
         Vector2 downDragPosition;       // Touch drag position
         Vector2 moveDownPositionA;      // First touch down position on move
         Vector2 moveDownPositionB;      // Second touch down position on move
+        Vector2 previousPositionA;      // Previous position A to compare for pinch gestures
+        Vector2 previousPositionB;      // Previous position B to compare for pinch gestures
         int tapCounter;                 // TAP counter (one tap implies TOUCH_ACTION_DOWN and TOUCH_ACTION_UP actions)
     } Touch;
     struct {
@@ -312,10 +311,10 @@ void ProcessGestureEvent(GestureEvent event)
                 // NOTE: Angle should be inverted in Y
                 GESTURES.Drag.angle = 360.0f - rgVector2Angle(GESTURES.Touch.downPositionA, GESTURES.Touch.upPosition);
 
-                if ((GESTURES.Drag.angle < 30) || (GESTURES.Drag.angle > 330)) GESTURES.current = GESTURE_SWIPE_RIGHT;        // Right
-                else if ((GESTURES.Drag.angle > 30) && (GESTURES.Drag.angle < 120)) GESTURES.current = GESTURE_SWIPE_UP;      // Up
-                else if ((GESTURES.Drag.angle > 120) && (GESTURES.Drag.angle < 210)) GESTURES.current = GESTURE_SWIPE_LEFT;   // Left
-                else if ((GESTURES.Drag.angle > 210) && (GESTURES.Drag.angle < 300)) GESTURES.current = GESTURE_SWIPE_DOWN;   // Down
+                if ((GESTURES.Drag.angle < 30) || (GESTURES.Drag.angle > 330)) GESTURES.current = GESTURE_SWIPE_RIGHT;          // Right
+                else if ((GESTURES.Drag.angle >= 30) && (GESTURES.Drag.angle <= 150)) GESTURES.current = GESTURE_SWIPE_UP;      // Up
+                else if ((GESTURES.Drag.angle > 150) && (GESTURES.Drag.angle < 210)) GESTURES.current = GESTURE_SWIPE_LEFT;     // Left
+                else if ((GESTURES.Drag.angle >= 210) && (GESTURES.Drag.angle <= 330)) GESTURES.current = GESTURE_SWIPE_DOWN;   // Down
                 else GESTURES.current = GESTURE_NONE;
             }
             else
@@ -367,6 +366,9 @@ void ProcessGestureEvent(GestureEvent event)
             GESTURES.Touch.downPositionA = event.position[0];
             GESTURES.Touch.downPositionB = event.position[1];
 
+            GESTURES.Touch.previousPositionA = GESTURES.Touch.downPositionA;
+            GESTURES.Touch.previousPositionB = GESTURES.Touch.downPositionB;
+
             //GESTURES.Pinch.distance = rgVector2Distance(GESTURES.Touch.downPositionA, GESTURES.Touch.downPositionB);
 
             GESTURES.Pinch.vector.x = GESTURES.Touch.downPositionB.x - GESTURES.Touch.downPositionA.x;
@@ -379,18 +381,15 @@ void ProcessGestureEvent(GestureEvent event)
         {
             GESTURES.Pinch.distance = rgVector2Distance(GESTURES.Touch.moveDownPositionA, GESTURES.Touch.moveDownPositionB);
 
-            GESTURES.Touch.downPositionA = GESTURES.Touch.moveDownPositionA;
-            GESTURES.Touch.downPositionB = GESTURES.Touch.moveDownPositionB;
-
             GESTURES.Touch.moveDownPositionA = event.position[0];
             GESTURES.Touch.moveDownPositionB = event.position[1];
 
             GESTURES.Pinch.vector.x = GESTURES.Touch.moveDownPositionB.x - GESTURES.Touch.moveDownPositionA.x;
             GESTURES.Pinch.vector.y = GESTURES.Touch.moveDownPositionB.y - GESTURES.Touch.moveDownPositionA.y;
 
-            if ((rgVector2Distance(GESTURES.Touch.downPositionA, GESTURES.Touch.moveDownPositionA) >= MINIMUM_PINCH) || (rgVector2Distance(GESTURES.Touch.downPositionB, GESTURES.Touch.moveDownPositionB) >= MINIMUM_PINCH))
+            if ((rgVector2Distance(GESTURES.Touch.previousPositionA, GESTURES.Touch.moveDownPositionA) >= MINIMUM_PINCH) || (rgVector2Distance(GESTURES.Touch.previousPositionB, GESTURES.Touch.moveDownPositionB) >= MINIMUM_PINCH))
             {
-                if ((rgVector2Distance(GESTURES.Touch.moveDownPositionA, GESTURES.Touch.moveDownPositionB) - GESTURES.Pinch.distance) < 0) GESTURES.current = GESTURE_PINCH_IN;
+                if ( rgVector2Distance(GESTURES.Touch.previousPositionA, GESTURES.Touch.previousPositionB) > rgVector2Distance(GESTURES.Touch.moveDownPositionA, GESTURES.Touch.moveDownPositionB) ) GESTURES.current = GESTURE_PINCH_IN;
                 else GESTURES.current = GESTURE_PINCH_OUT;
             }
             else
@@ -528,7 +527,7 @@ static double rgGetCurrentTime(void)
 {
     double time = 0;
 
-#if !defined(GESTURES_STANDALONE)
+#if !defined(RGESTURES_STANDALONE)
     time = GetTime();
 #else
 #if defined(_WIN32)
@@ -569,4 +568,4 @@ static double rgGetCurrentTime(void)
     return time;
 }
 
-#endif // GESTURES_IMPLEMENTATION
+#endif // RGESTURES_IMPLEMENTATION
